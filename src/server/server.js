@@ -4,6 +4,16 @@
 import express from 'express';
 import chalk from 'chalk';
 import webpack from 'webpack';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { renderToString } from 'react-dom/server';
+import { Provider } from 'react-redux';
+import { createStore, compose } from 'redux';
+import { StaticRouter } from 'react-router-dom';
+import { renderRoutes } from 'react-router-config';
+import routes from '../frontend/routes/serverRoutes';
+import reducer from '../frontend/reducers';
+import initialState from '../frontend/initialState';
 
 const { ENV: env, PORT: port } = process.env;
 
@@ -21,8 +31,9 @@ if (env === 'development') {
   app.use(webpackDevMiddleware(compiler, webpackServerConfig));
   app.use(webpackHotMiddleware(compiler));
 }
-app.get('*', (req, res) => {
-  res.send(`<!DOCTYPE html>
+
+const setResponse = (html) => (`
+  <!DOCTYPE html>
 		<html>
 			<head>
 				<link rel="stylesheet" href="assets/app.css"/>
@@ -30,11 +41,24 @@ app.get('*', (req, res) => {
 				<title>videos</title>
 			</head>
 			<body>
-				<div id="app"></div>
+				<div id="app">${html}</div>
 			</body>
 		</html>
 	`);
-});
+
+const renderApp = (req, res) => {
+  const store = createStore(reducer, initialState);
+  const html = renderToString(
+    <Provider store={store}>
+      <StaticRouter location={req.url} context={{}}>
+        {renderRoutes(routes)}
+      </StaticRouter>
+    </Provider>,
+  );
+  res.send(setResponse(html));
+};
+
+app.get('*', renderApp);
 
 app.listen(port, () => {
   console.log(`Server listening on port: ${chalk.green(port)}`);

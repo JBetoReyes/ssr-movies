@@ -15,6 +15,7 @@ import Layout from '../frontend/components/Layout';
 import routes from '../frontend/routes/serverRoutes';
 import reducer from '../frontend/reducers';
 import initialState from '../frontend/initialState';
+import getManifest from './getManifest';
 
 const { ENV: env, PORT: port } = process.env;
 
@@ -32,18 +33,27 @@ if (env === 'development') {
   app.use(webpackDevMiddleware(compiler, webpackServerConfig));
   app.use(webpackHotMiddleware(compiler));
 } else {
+  app.use((req, res, next) => {
+    req.hashManifest = getManifest();
+    next();
+  });
   app.use(express.static(`${__dirname}/public`));
   app.use(helmet());
   app.use(helmet.permittedCrossDomainPolicies());
   app.disable('x-powered-by');
 }
 
-const setResponse = (html, preloadedState) => `
+const setResponse = (html, preloadedState, manifest) => {
+  const mainStyles = manifest ? manifest['main.css'] : 'assets/app.css';
+  const mainJs = manifest ? manifest['main.js'] : 'assets/app.js';
+  const vendor = manifest ? manifest['vendors.js'] : 'assets/vendor.js';
+  return `
   <!DOCTYPE html>
 		<html>
 			<head>
-				<link rel="stylesheet" href="assets/app.css"/>
-				<script src="assets/app.js" type="text/javascript" defer></script>
+				<link rel="stylesheet" href="${mainStyles}"/>
+        <script src="${vendor}" type="text/javascript" defer></script>
+				<script src="${mainJs}" type="text/javascript" defer></script>
 				<title>videos</title>
 			</head>
 			<body>
@@ -51,14 +61,12 @@ const setResponse = (html, preloadedState) => `
 				<script>
 					// WARNING: See the following for security issues around embedding JSON in HTML:
 					// https://redux.js.org/recipes/server-rendering/#security-considerations
-          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(
-            /</g,
-            '\\u003c'
-          )}
+          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(/</g, '\\u003c')}
 				</script>
 			</body>
 		</html>
 	`;
+};
 
 const renderApp = (req, res) => {
   const store = createStore(reducer, initialState);
@@ -70,9 +78,9 @@ const renderApp = (req, res) => {
           {renderRoutes(routes)}
         </StaticRouter>
       </Layout>
-    </Provider>
+    </Provider>,
   );
-  res.send(setResponse(html, preloadedState));
+  res.send(setResponse(html, preloadedState, req.hashManifest));
 };
 
 app.get('*', renderApp);

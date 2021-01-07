@@ -5,12 +5,13 @@ import express from 'express';
 import chalk from 'chalk';
 import webpack from 'webpack';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import { renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
-import { createStore, compose } from 'redux';
+import { createStore } from 'redux';
 import { StaticRouter } from 'react-router-dom';
 import { renderRoutes } from 'react-router-config';
+import helmet from 'helmet';
+import Layout from '../frontend/components/Layout';
 import routes from '../frontend/routes/serverRoutes';
 import reducer from '../frontend/reducers';
 import initialState from '../frontend/initialState';
@@ -30,9 +31,14 @@ if (env === 'development') {
 
   app.use(webpackDevMiddleware(compiler, webpackServerConfig));
   app.use(webpackHotMiddleware(compiler));
+} else {
+  app.use(express.static(`${__dirname}/public`));
+  app.use(helmet());
+  app.use(helmet.permittedCrossDomainPolicies());
+  app.disable('x-powered-by');
 }
 
-const setResponse = (html) => (`
+const setResponse = (html, preloadedState) => `
   <!DOCTYPE html>
 		<html>
 			<head>
@@ -42,20 +48,31 @@ const setResponse = (html) => (`
 			</head>
 			<body>
 				<div id="app">${html}</div>
+				<script>
+					// WARNING: See the following for security issues around embedding JSON in HTML:
+					// https://redux.js.org/recipes/server-rendering/#security-considerations
+          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(
+            /</g,
+            '\\u003c'
+          )}
+				</script>
 			</body>
 		</html>
-	`);
+	`;
 
 const renderApp = (req, res) => {
   const store = createStore(reducer, initialState);
+  const preloadedState = store.getState();
   const html = renderToString(
     <Provider store={store}>
-      <StaticRouter location={req.url} context={{}}>
-        {renderRoutes(routes)}
-      </StaticRouter>
-    </Provider>,
+      <Layout>
+        <StaticRouter location={req.url} context={{}}>
+          {renderRoutes(routes)}
+        </StaticRouter>
+      </Layout>
+    </Provider>
   );
-  res.send(setResponse(html));
+  res.send(setResponse(html, preloadedState));
 };
 
 app.get('*', renderApp);

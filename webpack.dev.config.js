@@ -1,5 +1,6 @@
 const { merge } = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const webpack = require('webpack');
 
 const baseConfig = require('./webpack.config.js');
 
@@ -11,6 +12,7 @@ const config = {
     },
     mode: 'development',
     plugins: [
+      new webpack.HotModuleReplacementPlugin(),
       new MiniCssExtractPlugin({
         filename: 'assets/app.css',
       }),

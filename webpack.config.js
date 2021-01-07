@@ -1,6 +1,5 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const webpack = require('webpack');
 
 module.exports = {
   entry: ['./src/frontend/index.js'],
@@ -20,14 +19,6 @@ module.exports = {
         use: {
           loader: 'babel-loader',
         },
-      },
-      {
-        test: /\.html$/,
-        use: [
-          {
-            loader: 'html-loader',
-          },
-        ],
       },
       {
         test: /\.(s*)css$/,
@@ -55,7 +46,5 @@ module.exports = {
   devServer: {
     historyApiFallback: true,
   },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-  ],
+  plugins: [],
 };

@@ -26,7 +26,6 @@ passport.use(new BasicStrategy(async (email, password, done) => {
     }
     done(null, data);
   } catch (err) {
-    console.log(err.toJSON());
     done(err);
   }
 }));

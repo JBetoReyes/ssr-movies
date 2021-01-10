@@ -12,7 +12,7 @@ const userMoviesRouter = (app) => {
     const { data } = req.body;
     const { token } = req.cookies;
     try {
-      const { data, status } = axios({
+      const { data: axiosData, status } = await axios({
         url: `${apiUrl}/user-movies`,
         method: 'POST',
         data: {
@@ -22,14 +22,40 @@ const userMoviesRouter = (app) => {
           Authorization: `Bearer ${token}`,
         },
       });
-      res.statue(201).json(data);
+      res.status(201).json(axiosData);
     } catch (err) {
-      next(err);
+      let errorToThrow = err;
+      if (err.response && err.response.data) {
+        errorToThrow = err.response.data;
+      }
+      next(errorToThrow);
     }
   });
 
   router.delete('/:userMovieId', async (req, res, next) => {
-
+    const { userMovieId } = req.params;
+    const { token } = req.cookies;
+    try {
+      const { data: axiosData, status } = await axios({
+        url: `${apiUrl}/user-movies/${userMovieId}`,
+        method: 'DELETE',
+        data: {
+          data: {
+            userMovie: userMovieId,
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      res.status(201).json(axiosData);
+    } catch (err) {
+      let errorToThrow = err;
+      if (err.response && err.response.data) {
+        errorToThrow = err.response.data;
+      }
+      next(errorToThrow);
+    }
   });
 };
 

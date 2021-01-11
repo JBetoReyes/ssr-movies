@@ -28,6 +28,7 @@
     "md5": "^2.3.0",
     "passport": "^0.4.1",
     "passport-http": "^0.3.0",
+    "passport-oauth": "^1.0.0",
     "prop-types": "^15.7.2",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",

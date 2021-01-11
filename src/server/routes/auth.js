@@ -4,11 +4,9 @@ import boom from '@hapi/boom';
 import axios from 'axios';
 
 require('../utils/auth/strategies/basic');
+require('../utils/auth/strategies/oauth.js');
 
-const {
-  ENV: env,
-  API_URL: apiUrl,
-} = process.env;
+const { ENV: env, API_URL: apiUrl } = process.env;
 
 const ONE_HOUR = 60 * 60;
 const THIRTY_DAYS_IN_SEC = 30 * 24 * ONE_HOUR;
@@ -18,7 +16,9 @@ const authRouter = (app) => {
   const router = express.Router();
   app.use('/auth', router);
   router.post('/sign-in', async (req, res, next) => {
-    const { data: { rememberMe } } = req.body;
+    const {
+      data: { rememberMe },
+    } = req.body;
     passport.authenticate('basic', (error, data) => {
       if (error || !data) {
         next(boom.unauthorized());
@@ -46,8 +46,10 @@ const authRouter = (app) => {
 
   router.post('/sign-up', async (req, res, next) => {
     try {
-      const { data: { user } } = req.body;
-      const { data, status } = await axios({
+      const {
+        data: { user },
+      } = req.body;
+      const { data: axiosData, status } = await axios({
         url: `${apiUrl}/auth/sign-up`,
         method: 'post',
         data: {
@@ -56,7 +58,6 @@ const authRouter = (app) => {
           },
         },
       });
-      console.log('data: ', data);
       res.status(status).json({ data: { message: 'user created' } });
     } catch (err) {
       let errToThrow = err;
@@ -66,6 +67,33 @@ const authRouter = (app) => {
       next(errToThrow);
     }
   });
+  router.get(
+    '/google-oauth',
+    passport.authenticate('google-oauth', {
+      scope: ['email', 'profile', 'openid'],
+    })
+  );
+  router.get(
+    '/google-oauth/callback',
+    passport.authenticate('google-oauth', { session: false }),
+    (req, res, next) => {
+      if (!req.user) {
+        next(boom.authenticate());
+        return;
+      }
+      const { token, ...user } = req.user;
+      res.cookie('token', token, {
+        httpOnly: env === 'production',
+        secure: env === 'production',
+      });
+      const { sub, name, email } = user;
+      res.status(200).json({
+        sub,
+        name,
+        email,
+      });
+    }
+  );
 };
 
 export default authRouter;

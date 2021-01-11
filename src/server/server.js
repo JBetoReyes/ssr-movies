@@ -52,7 +52,7 @@ routerProvider(app);
 const setResponse = (html, preloadedState, manifest) => {
   const mainStyles = manifest ? manifest['main.css'] : 'assets/app.css';
   const mainJs = manifest ? manifest['main.js'] : 'assets/app.js';
-  const vendor = manifest['vendors.js'];
+  const vendor = manifest && manifest['vendors.js'];
   return `
   <!DOCTYPE html>
 		<html>

@@ -27,6 +27,7 @@
     "ignore-styles": "^5.0.1",
     "md5": "^2.3.0",
     "passport": "^0.4.1",
+    "passport-google-oauth": "^2.0.0",
     "passport-http": "^0.3.0",
     "passport-oauth": "^1.0.0",
     "prop-types": "^15.7.2",

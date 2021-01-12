@@ -5,6 +5,7 @@ import axios from 'axios';
 
 require('../utils/auth/strategies/basic');
 require('../utils/auth/strategies/oauth.js');
+require('../utils/auth/strategies/google.js');
 
 const { ENV: env, API_URL: apiUrl } = process.env;
 
@@ -71,7 +72,7 @@ const authRouter = (app) => {
     '/google-oauth',
     passport.authenticate('google-oauth', {
       scope: ['email', 'profile', 'openid'],
-    })
+    }),
   );
   router.get(
     '/google-oauth/callback',
@@ -92,7 +93,34 @@ const authRouter = (app) => {
         name,
         email,
       });
-    }
+    },
+  );
+
+  router.get(
+    '/google',
+    passport.authenticate('google', {
+      scope: ['email', 'profile', 'openid'],
+    }),
+  );
+  router.get(
+    '/google/callback',
+    passport.authenticate('google', { session: false }),
+    (req, res, next) => {
+      if (!req.user) {
+        next(boom.authenticate());
+        return;
+      }
+      const { token, ...user } = req.user;
+      res.cookie('token', token, {
+        httpOnly: env === 'production',
+        secure: env === 'production',
+      });
+      res.status(200).json({
+        id: user.sub,
+        name: user.name,
+        email: user.email,
+      });
+    },
   );
 };
 

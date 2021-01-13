@@ -59,7 +59,7 @@ const authRouter = (app) => {
           },
         },
       });
-      res.status(status).json({ data: { message: 'user created' } });
+      res.status(status).json({ name: user.name, email: user.email });
     } catch (err) {
       let errToThrow = err;
       if (err.response && err.response.data) {

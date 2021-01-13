@@ -13,7 +13,12 @@ const Header = props => {
   const hasUser = Object.keys(user).length > 0;
 
   const handleLogout = () => {
+		document.cookie = 'id=';
+		document.cookie = 'name=';
+		document.cookie = 'email=';
+		document.cookie = 'token='
     props.logoutRequest({});
+		document.location.href = '/login'
   }
   const headerClass = classNames('header', {
     isLogin,
@@ -34,10 +39,10 @@ const Header = props => {
         </div>
         <ul>
           {hasUser ?
-            <li><a href="/">{user.name}</a></li> 
+            <li><a href="/">{user.name}</a></li>
             : null
           }
-          {hasUser ? 
+          {hasUser ?
             <li><a href="#logout" onClick={handleLogout}>Cerrar Sesión</a></li>
             :
             <li>

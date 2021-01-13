@@ -12,10 +12,10 @@ import { StaticRouter } from 'react-router-dom';
 import { renderRoutes } from 'react-router-config';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import passport from 'passport';
 import Layout from '../frontend/components/Layout';
 import routes from '../frontend/routes/serverRoutes';
 import reducer from '../frontend/reducers';
-import initialState from '../frontend/initialState';
 import getManifest from './getManifest';
 import routerProvider from './routes';
 
@@ -47,6 +47,8 @@ if (env === 'development') {
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
+app.use(passport.session());
 routerProvider(app);
 
 const setResponse = (html, preloadedState, manifest) => {
@@ -74,14 +76,33 @@ const setResponse = (html, preloadedState, manifest) => {
 	`;
 };
 
-const renderApp = (req, res) => {
+const createInitialState = ({ id, name, email }) => {
+  const initialState = {
+    user: {},
+    playing: {},
+    myList: [],
+    trends: [],
+    originals: [],
+  };
+  if (id) {
+    initialState.user.email = email;
+    initialState.user.name = name;
+    initialState.user.id = id;
+  }
+  return initialState;
+};
+
+const renderApp = async (req, res) => {
+  const { id, name, email } = req.cookies;
+  const initialState = createInitialState({ id, name, email });
+  const isLogged = (id);
   const store = createStore(reducer, initialState);
   const preloadedState = store.getState();
   const html = renderToString(
     <Provider store={store}>
       <Layout>
         <StaticRouter location={req.url} context={{}}>
-          {renderRoutes(routes)}
+          {renderRoutes(routes(isLogged))}
         </StaticRouter>
       </Layout>
     </Provider>,

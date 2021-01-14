@@ -13,13 +13,14 @@ import { renderRoutes } from 'react-router-config';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
+import axios from 'axios';
 import Layout from '../frontend/components/Layout';
 import routes from '../frontend/routes/serverRoutes';
 import reducer from '../frontend/reducers';
 import getManifest from './getManifest';
 import routerProvider from './routes';
 
-const { ENV: env, PORT: port } = process.env;
+const { ENV: env, PORT: port, API_URL: apiUrl } = process.env;
 
 const app = express();
 if (env === 'development') {
@@ -60,7 +61,11 @@ const setResponse = (html, preloadedState, manifest) => {
 		<html>
 			<head>
 				<link rel="stylesheet" href="${mainStyles}"/>
-        ${manifest ? `<script src="${vendor}" type="text/javascript" defer></script>` : ''}
+        ${
+  manifest
+    ? `<script src="${vendor}" type="text/javascript" defer></script>`
+    : ''
+}
 				<script src="${mainJs}" type="text/javascript" defer></script>
 				<title>videos</title>
 			</head>
@@ -69,7 +74,10 @@ const setResponse = (html, preloadedState, manifest) => {
 				<script>
 					// WARNING: See the following for security issues around embedding JSON in HTML:
 					// https://redux.js.org/recipes/server-rendering/#security-considerations
-          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(/</g, '\\u003c')}
+          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(
+    /</g,
+    '\\u003c',
+  )}
 				</script>
 			</body>
 		</html>
@@ -92,10 +100,64 @@ const createInitialState = ({ id, name, email }) => {
   return initialState;
 };
 
+const getMovies = async (token) => {
+  let movies = [];
+  try {
+    const { data: { data } } = await axios({
+      url: `${apiUrl}/movies`,
+      method: 'get',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    movies = data;
+  } catch (err) {
+    let errToThrow = err;
+    if (err.response && err.response.data) {
+      errToThrow = err.response.data;
+    }
+    console.log(errToThrow);
+  }
+  return movies;
+};
+
+const getMovieList = async (token, userId) => {
+  let movieList = [];
+  try {
+    const { data: { data } } = await axios({
+      url: `${apiUrl}/user-movies?userId=${userId}`,
+      method: 'get',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    movieList = data;
+  } catch (err) {
+    let errToThrow = err;
+    if (err.response && err.response.data) {
+      errToThrow = err.response.data;
+    }
+    console.log(errToThrow);
+  }
+  return movieList;
+};
+
 const renderApp = async (req, res) => {
-  const { id, name, email } = req.cookies;
+  const {
+    id, name, email, token,
+  } = req.cookies;
   const initialState = createInitialState({ id, name, email });
-  const isLogged = (id);
+  const movies = await getMovies(token);
+  const myMovies = await getMovieList(token, id);
+  const myListIds = myMovies.map((myMovie) => myMovie.movieId);
+  initialState.myList = movies.filter(({ _id }) => myListIds.includes(_id));
+  initialState.trends = movies.filter(
+    (movie) => movie.contentRating === 'PG',
+  );
+  initialState.originals = movies.filter(
+    (movie) => movie.contentRating === 'G',
+  );
+  const isLogged = id;
   const store = createStore(reducer, initialState);
   const preloadedState = store.getState();
   const html = renderToString(

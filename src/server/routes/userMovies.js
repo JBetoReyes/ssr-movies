@@ -8,6 +8,34 @@ const {
 const userMoviesRouter = (app) => {
   const router = express.Router();
   app.use('/user-movies', router);
+  router.get('/', async (req, res, next) => {
+    const { movieId } = req.query;
+    const { token, id } = req.cookies;
+    try {
+      const { data, status } = await axios({
+        url: `${apiUrl}/user-movies`,
+        method: 'GET',
+        data: {
+          data: {
+            userMovie: {
+              userId: id,
+              movieId,
+            },
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      });
+      res.status(200).json(data);
+    } catch (err) {
+      let errToThrow = err;
+      if (err.response && err.response.data) {
+        errToThrow = err.response.data;
+      }
+      next(errToThrow);
+    }
+  });
   router.post('/', async (req, res, next) => {
     const { data } = req.body;
     const { token } = req.cookies;

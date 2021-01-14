@@ -9,7 +9,7 @@ require('../utils/auth/strategies/google.js');
 
 const { ENV: env, API_URL: apiUrl } = process.env;
 
-const ONE_HOUR = 60 * 60;
+const ONE_HOUR = 60 * 60 * 1000;
 const THIRTY_DAYS_IN_SEC = 30 * 24 * ONE_HOUR;
 const TWO_HOUR_IN_SEC = 2 * ONE_HOUR;
 
@@ -72,7 +72,7 @@ const authRouter = (app) => {
     '/google-oauth',
     passport.authenticate('google-oauth', {
       scope: ['email', 'profile', 'openid'],
-    }),
+    })
   );
   router.get(
     '/google-oauth/callback',
@@ -93,14 +93,14 @@ const authRouter = (app) => {
         name,
         email,
       });
-    },
+    }
   );
 
   router.get(
     '/google',
     passport.authenticate('google', {
       scope: ['email', 'profile', 'openid'],
-    }),
+    })
   );
   router.get(
     '/google/callback',
@@ -120,7 +120,7 @@ const authRouter = (app) => {
         name: user.name,
         email: user.email,
       });
-    },
+    }
   );
 };
 

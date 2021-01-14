@@ -15,10 +15,10 @@ const Header = props => {
   const handleLogout = () => {
 		document.cookie = 'id=';
 		document.cookie = 'name=';
-		document.cookie = 'email=';
-		document.cookie = 'token='
+    document.cookie = 'email=';
+		document.cookie = 'token=';
     props.logoutRequest({});
-		document.location.href = '/login'
+		document.location.href = '/login';
   }
   const headerClass = classNames('header', {
     isLogin,

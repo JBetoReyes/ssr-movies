@@ -76,3 +76,35 @@ export const loginUser = ({ email, password }, redirectUrl) => async (dispatch) 
     console.log(err);
   });
 };
+
+export const addMovieToMyList = (movie) => async (dispatch) => {
+  try {
+    const { _id: movieId } = movie;
+    const { data } = await axios({
+      url: '/user-movies',
+      method: 'POST',
+      data: {
+        data: {
+          movieId,
+        },
+      },
+    });
+    console.log('movies list data: ', data);
+    dispatch(setFavorite(movie));
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const deleteFromMovieList = (movieId) => async (dispatch) => {
+  try {
+    const { data } = await axios({
+      url: `/user-movies/${movieId}`,
+      method: 'delete',
+    });
+    console.log('Movie to delete: ', movieId);
+    dispatch(deleteFavorite(movieId));
+  } catch (err) {
+    console.log(userMoviesRouter);
+  }
+};
